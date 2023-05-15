@@ -25,6 +25,8 @@ potentials = """
     pair_coeff 2 2 0.102 3.188 
     bond_coeff  1 450 0.9572
     angle_coeff 1 55 104.52
+
+    neigh_modify one 10000
     """
 
 thermo = """

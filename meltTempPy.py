@@ -49,25 +49,21 @@ class MeltTempPy:
         # combining liquid and solid
         lmp = lammps()
         lmp.commands_string(self.system + self.styles)
-        lmp.command(f"region sim_box block 0 {2 * (boxhi[0] + boxlo[0])} 0 {boxhi[1] + boxlo[1]} 0 {boxhi[0] + boxlo[0]}")
+        lmp.command(f"region sim_box block 0 {2 * (boxhi[0] - boxlo[0]) + 4} 0 {boxhi[1] - boxlo[1] + 1} 0 {boxhi[2] - boxlo[2] + 1}")
         lmp.command(f"create_box {self.n_atom_types} sim_box {create_box_settings}")
         
-        lmp.command(f"read_data temp.lmp add append group liquid shift {boxlo[0]} {boxlo[1]} {boxlo[2]}")
-        lmp.command(f"read_data {source} add append group solid shift {2 * boxlo[0] + boxhi[0]} {boxlo[1]} {boxlo[2]}")
+        lmp.command(f"read_data temp.lmp add append group liquid shift {-boxlo[0]} {-boxlo[1]} {-boxlo[2]}")
+        lmp.command(f"read_data {source} add append group solid shift {boxhi[0] - 2 * boxlo[0] + 2} {-boxlo[1]} {-boxlo[2]}")
         
         lmp.commands_string(self.potentials)
         lmp.commands_string(self.thermo + self.compute)
-        s = f"""
-            velocity solid create 1 123456 dist gaussian
-            fix f1 solid nvt temp 1 1 1000.0
-            dump d all atom 10 {self.name}_init_solid_equi.dump
-            run {self.run}
-
-            unfix f1            
+        s = f"""   
+            write_data test pair ij
             velocity all create 1 123456 dist gaussian
-            fix f2 all npt temp 1 1 1000.0 iso 1.0 1.0 1000.0
+            fix f all nvt temp 1 {t_max} 1000.0
+            dump d all atom 1 {self.name}_init_equi.dump
 
-            run 10
+            run 100
             
             write_data {self.name}_init.lmp pair ij
             """
@@ -82,7 +78,7 @@ class MeltTempPy:
         lmp.commands_string(self.potentials + self.thermo + self.compute)
         s = f"""
             velocity all create 1 123456 dist gaussian
-            fix f1 all nvt temp 1 {temp} 10.0
+            fix f1 all nvt temp 1 {temp} 50.0
             dump d all atom 10 {self.name}_nvt_{int(temp)}.dump
 
             timestep {self.timestep}
