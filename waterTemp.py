@@ -34,6 +34,9 @@ thermo = """
     thermo_style custom step temp pe
     """
 
+settings = "bond/types 1 angle/types 1 extra/bond/per/atom 1000 extra/angle/per/atom 1000"
+
 mtp = MeltTempPy(system, styles, potentials, thermo, "H2O", 2)
-temp, dev = mtp.find_tmelt("Ice-Ic-40A-box.dat", 0.5, 3000, 100, 400, 2, "bond/types 1 angle/types 1 extra/bond/per/atom 1000 extra/angle/per/atom 1000")
+temp, dev = mtp.find_tmelt("Ice-Ic-40A-box.dat", 0.5, 3000, 100, 400, 2, settings)
 print(f"Melting temperature of water is {temp} ± {dev} K")
+print(f"Total time: {mtp.time}")

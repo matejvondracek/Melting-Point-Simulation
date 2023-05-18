@@ -13,7 +13,7 @@ class MeltTempPy:
             """
     timestep = 0.0
     run = 0
-    t = 0
+    time = 0
     n_atom_types = 0
 
 
@@ -22,11 +22,11 @@ class MeltTempPy:
         self.styles = styles
         self.potentials = potentials
         self.thermo = thermo
-        self.name += name
+        self.name = name
         self.n_atom_types = n_atom_types
 
 
-    def _run_sim_init(self, source, t_min, t_max, create_box_settings):
+    def _run_sim_init(self, source, t_max, create_box_settings):
         # melting for liquid
         lmp = lammps()
         lmp.commands_string(self.system + self.styles)
@@ -38,23 +38,26 @@ class MeltTempPy:
             dump d all atom 10 {self.name}_init_melt.dump
             
             timestep {self.timestep}
-            run {self.run}
+            run 100#{self.run}
 
-            write_data temp.lmp pair ij 
+            write_data temp.lmp pair ij
             """
         lmp.commands_string(s)
 
         boxlo, boxhi, xy, yz, zx, per, type = lmp.extract_box()
+        x = 2 * (boxhi[0] - boxlo[0]) + 3
+        y = boxhi[1] - boxlo[1] + 1
+        z = boxhi[2] - boxlo[2] + 1
 
         # combining liquid and solid
         lmp = lammps()
         lmp.commands_string(self.system + self.styles)
-        lmp.command(f"region sim_box block 0 {2 * (boxhi[0] - boxlo[0]) + 4} 0 {boxhi[1] - boxlo[1] + 1} 0 {boxhi[2] - boxlo[2] + 1}")
+        lmp.command(f"region sim_box block 0 {x} 0 {y} 0 {z}")
         lmp.command(f"create_box {self.n_atom_types} sim_box {create_box_settings}")
-        
-        lmp.command(f"read_data temp.lmp add append group liquid shift {-boxlo[0]} {-boxlo[1]} {-boxlo[2]}")
+
+        lmp.command(f"read_data temp.lmp add append group liquid shift {-boxlo[0] + 1} {-boxlo[1] + 1} {-boxlo[2] + 1}")
         lmp.command(f"read_data {source} add append group solid shift {boxhi[0] - 2 * boxlo[0] + 2} {-boxlo[1]} {-boxlo[2]}")
-        
+
         lmp.commands_string(self.potentials)
         lmp.commands_string(self.thermo + self.compute)
         s = f"""   
@@ -93,7 +96,7 @@ class MeltTempPy:
         self.timestep = time_step
         self.run = steps
 
-        pe_init = self._run_sim_init(source, t_min, t_max, create_box_settings)
+        pe_init = self._run_sim_init(source, t_max, create_box_settings)
 
         while (t_max - t_min > 2 * max_dev):
             t_mid = (t_max + t_min) / 2
@@ -109,5 +112,5 @@ class MeltTempPy:
             
         t_mid = (t_max + t_min) / 2
         dev = (t_max - t_min) / 2
-        self.t = round((time.time() - start_time) / 60)
+        self.time = round((time.time() - start_time) / 60)
         return t_mid, dev
