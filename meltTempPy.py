@@ -38,7 +38,7 @@ class MeltTempPy:
             dump d all atom 10 {self.name}_init_melt.dump
             
             timestep {self.timestep}
-            run 100#{self.run}
+            run {self.run}
 
             write_data temp.lmp pair ij
             """
@@ -55,13 +55,12 @@ class MeltTempPy:
         lmp.command(f"region sim_box block 0 {x} 0 {y} 0 {z}")
         lmp.command(f"create_box {self.n_atom_types} sim_box {create_box_settings}")
 
-        lmp.command(f"read_data temp.lmp add append group liquid shift {-boxlo[0] + 1} {-boxlo[1] + 1} {-boxlo[2] + 1}")
+        lmp.command(f"read_data temp.lmp add append group liquid shift {-boxlo[0]} {-boxlo[1]} {-boxlo[2]}")
         lmp.command(f"read_data {source} add append group solid shift {boxhi[0] - 2 * boxlo[0] + 2} {-boxlo[1]} {-boxlo[2]}")
 
         lmp.commands_string(self.potentials)
         lmp.commands_string(self.thermo + self.compute)
         s = f"""   
-            write_data test pair ij
             velocity all create 1 123456 dist gaussian
             fix f all nvt temp 1 {t_max} 1000.0
             dump d all atom 1 {self.name}_init_equi.dump

@@ -5,3 +5,10 @@
 /log.lammps
 /temp.lmp
 /H2O_init_equi.dump
+/Al_nvt_875.dump
+/Al_nvt_1250.dump
+/Al_nvt_687.dump
+/Al_nvt_593.dump
+/Al_init_equi.dump
+/Al_init.lmp
+/Al_init_melt.dump
